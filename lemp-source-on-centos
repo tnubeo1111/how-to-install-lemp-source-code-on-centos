@@ -1,0 +1,115 @@
+LEMP được viết tắt của Linux, Nginx, Mysql, PHP. 
+Các thành phần này được sắp xếp theo các lớp hỗ trợ nhau, tạo thành các stask phần mềm. 
+Các website và các ứng dụng web chạy trên các nền tảng của các stask cơ bản này.
+
+#Cài đặt nginx
+việc đầu tiên chúng ta nên update hệ thống trước.
+
+#yum -y update 
+
+Xong khi chúng ta update xong hệ thống, chúng ta sẽ cài đặt các gói phụ thuộc của nginx:
+
+# yum groupinstall 'Development Tools' 
+
+.... gói này khi chúng ta cài đặt nó sẽ tự động down các gói 
+flex, gcc c/c++ compiler, redhat-rpm-config, strace, rpm-build, make, pkgconfig, gettext, automake, strace64, gdb, bison
+,libtool, autoconf, gcc-c++ compiler ,binutils and all dependencies.
+
+Do chúng ta cài từ source code nên việc compiler biên dịch chương trình là cần thiết.
+
+Tiếp theo chúng ta tiếp tục cài đặt các gói phụ thuộc liên quan tới Nginx:
+
+# yum install pcre-devel -y
+# yum install zlib-devel -y 
+# yum install openssl-devel -y
+# yum install libxml2-devel -y
+# yum install libxslt-devel -y
+# yum install libgcrypt-devel -y
+# yum install gd-devel -y
+
+
+Tạo thư mục, tải xuống và cài đặt nguồn:
+# mkdir downloads 
+# cd downloads 
+# wget http://nginx.org/download/nginx-1.19.9.tar.gz
+# tar -zxf nginx-1.19.9.tar.gz
+# cd nginx-1.19.9
+
+File /Configure để biên dịch:
+ ./configure --prefix=/usr/local/nginx --sbin-pa
+th=/usr/local/sbin/nginx --error-log-path=/usr/local/var/log/nginx/error.log -
+-pid-path=/var/run/nginx.pid --lock-path=/var/run/nginx.lock --user=nginx --gr
+oup=nginx
+
+# make -j3
+# make install
+
+Sau khi chúng ta install xong thì hãy cấp quyền user và group "nginx" cho thư
+mục /usr/local/nginx
+
+# chown -R nginx:nginx /usr/local/nginx/
+
+Tiếp theo đó chúng ta bắt đầu tạo file Systemctl cho nginx
+# vim /usr/lib/systemd/system/nginx.service
+
+Các bạn coppy file như thế này hoặc có thể sửa theo file mà bạn đã ./configure
+
+[Unit]
+Description=The nginx HTTP and reverse proxy server
+After=network-online.target remote-fs.target nss-lookup.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+PIDFile=/run/nginx.pid
+
+ExecStartPre=/usr/local/sbin/nginx -t -c /usr/local/nginx/conf/nginx.conf
+ExecStart=/usr/local/sbin/nginx -c /usr/local/nginx/conf/nginx.conf
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+
+[Install]
+WantedBy=multi-user.target
+
+sau đó các bạn save file system lại và bắt đầu start file
+
+# systemctl start nginx
+# systemctl status nginx 
+
+--Như thế các bạn đã hoàn thành install nginx từ source rồi :D 
+
+CÀI ĐẶT MYSQL / MARIADB
+Các bạn có thể cài mysql theo ý của các bạn còn mình thì sẽ install MARIADB
+
+Đầu tiên các bạn hãy # cd downloads 
+
+wget https://downloads.mariadb.com/MariaDB/mariadb_repo_setup
+
+sau đó chúng ta cấp quyền thực thi 
+
+# chmod +x mariadb_repo_setup
+
+./mariadb_repo_setup
+
+Tiếp theo đó chúng ta tiếp install mariadb
+
+# yum install MariaDB-server MariaDB-client -y
+
+
+Khởi động MariaDB và cho MariaDB khởi động cùng hệ thống
+
+# systemctl start mariadb
+# systemctl enable mariadb
+
+Mặc định, MariaDB không đặt mật khẩu cho user root, để bảo mật, bạn cần đặt mật khẩu root cho MariaDB bằng lệnh
+
+#  mariadb-secure-installation
+
+sau đó các bạn cứ nhấn enteer rồi set pass cho rooot ròi nhấn Y liên tục
+--Và như thế các bạn đã cài xong MaraiDB. Thực chất chúng ta cài maria không phải từ sour mà là từ 1 bản repo có sẳn ròi chúng ta update lên
+
+CÀI ĐẶT PHP
+
+Trước tiên chúng ta nên install cái gói phụ thuộc liên quan tới PHP
+# yum install autoconf libtool re2c bison libxml2-devel bzip2-devel libcurl-devel libpng-devel
+libicu-devel gcc-c++ libmcrypt-devel libwebp-devel libjpeg-devel openssl-devel -y
