@@ -205,6 +205,93 @@ request_terminate_timeout = 100
 request_slowlog_timeout = 10s
 slowlog = /usr/local/php/var/log/www.log.slow
 
+TÌM php-fpm.service
+# find / -name php-fpm.service
+# cp /root/downloads/php-src-php-7.4.12/sapi/fpm/php-fpm.service /etc/systemd/system/
+# chmod +x /etc/systemd/system/php-fpm.service
+
+Sau đó chúng ta bắt đầu đầu start và xem trạng thái của php-fpm có bị lỗi không
+# systemctl start php-fpm74 (à do mình mv cái php-fpm.server thành php-fpm74.service nha mọi người hehee :))) )
+# systemctl status php-fpm74
+
+Sẽ xuất hiện lỗi:
+ERROR: failed to open error_log (/usr/local/php74/var/log/....): Read-only file system (30)
+fix: mọi người vô lại file php-fpm.service (còn của mình đã mv lại nên là php-fpm74.service)
+# vim /etc/systemd/system/php-fpm74.service
+sau đó mọi người tìm tới dòng 
+ProtectSystem=true và đổi thành ProtectSystem=false
+
+sau đó mng sẽ restart lại và xem status là hoàn thành quá trình cài đặt php-fpm.
 
 
+Tiếp theo đó chúng ta tiếp tục test thử php đã chạy với nginx chưa
+Đầu tiện các bạn tạo thư mục mà các bạn muốn còn mình thì cứ theo mặc định
+# mkdir /var/www/html
+
+Sau đó tiếp tục tạo 1 file info.php
+# vim info.php
+Trong info.php các bạn gõ theo mình 
+<?php
+  infophp();
+?>
+
+sau đó lưu tệp lại 
+# :wq
+
+Tiếp tục các bạn qua thư mục nginx để cấu hình nginx
+# vim /usr/local/nginx/conf/nginx.conf (thật sự thì các bạn nên tạo 1 thư mục ở ngoài /usr/local/nginx/conf.d rồi vim nginx.conf_bk vì đơn giản chúng 
+ta không nên đụng vào file nginx.conf file cấu hình chính)
+Sau khi bạn vim nginx.conf các bạn sữa lại file như sau
+
+root   /var/www/html; (note nếu các bạn để /var/www/html/ ---> nó sẽ báo lỗi sau "FastCGI sent in stderr: "Primary script unknown" while reading response header from upstream")
+index  index.php index.html index.htm;
+
+access_log /usr/local/nginx/logs/access.log;
+error_log /usr/local/nginx/logs/error.log;
+
+ location ~ \.php$ {
+            fastcgi_pass   unix:/var/run/php-fpm74/php-fpm.sock;   (file này m người đã cấu hình trong www.conf)
+            fastcgi_index  index.php;
+            fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+            include        fastcgi_params;
+        }
+
+
+* Còn nếu các bạn tạo 1 thư mục mới ở ngoài thì vẫn làm như trên nha:
+# mkdir /usr/local/nginx/conf.d
+# cp /usr/local/nginx/conf/nginx.conf  /usr/local/nginx/conf.d/nginx.conf.bk(tên file mng muốn đặt)
+sau đó chúng ta vim vào nginx.conf.bk
+# vim nginx.conf.bk
+và sửa hoàn toàn y chang như trên file nginx.conf (mà lưu ý nè nếu bạn cấu hình trong nginx.conf.bk thì không được chỉnh sửa file nginx.conf file chính để mặc định)
+sau đó bạn vim vào nginx.conf(file cấu hình chính nginx)
+# vim /usr/local/nginx/conf/nginx.conf (nhớ là file này mọi người không thêm sửa gì cả nha nhưng mọi người kéo xuống dưới cùng thêm 2 dòng nè để file nginx.conf
+liên kết với nginx.conf.bk)
+ 
+ include /usr/local/nginx/conf.d/*;
+ server_names_hash_bucket_size 64;
+(2 dòng này nằm trong ngoặc nha)
+
+và bạn chỉ cần gõ:
+# nginx -t 
+nếu ra kết quả như thế này là thành công 
+"nginx: the configuration file /usr/local/nginx/conf/nginx.conf syntax is ok
+nginx: configuration file /usr/local/nginx/conf/nginx.conf test is successful"
+
+sau đó tiếp tục
+# systemctl restart nginx 
+
+và các bạn lên trình duyệt gõ ip/info.php thì sẽ ra trang php ----> ví dụ của mình: 103.97.**.**/info.php
+
+
+
+
+
+--------NHƯ THẾ LÀ CÁC BẠN CÀI ĐẶT THÀNH CÔNG LEMP TỪ SOURCE CODE TRÊN CENTOS7 RỒI ĐÓ ------------
+-Mình tên: Tha.
+-Rất vui vì mình đã hoàn thành viết xong bài này.
+-Mong mọi người đọc có gì sai sót mong mọi người nhắc nhở mình hãy gửi qua mail.
+-Nếu các bạn lúc đang install bị lỗi gì thì cứ gửi mail mình né.
+-Mail: letha01677583903@gmail.com
+-Cảm ơn các bạn đã đọc bài việt này. 
+-Chúc các bạn thành công ^.^
 
